@@ -77,7 +77,6 @@ def chat(message, history):
 
 demo = gr.ChatInterface(
     fn=chat,
-    type="messages",
     title="Nader Chatbot",
     description="Ask questions about Nader's background, career, skills, and experience."
 )
