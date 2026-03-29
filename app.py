@@ -6,6 +6,7 @@ from openai import OpenAI
 from pypdf import PdfReader
 
 
+
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY is not set in Hugging Face Secrets.")
@@ -52,13 +53,19 @@ With this context, please chat with the user, always staying in character as {na
 def chat(message, history):
     messages = [{"role": "system", "content": system_prompt}]
 
-    for user_msg, assistant_msg in history:
-        if user_msg:
-            messages.append({"role": "user", "content": user_msg})
-        if assistant_msg:
-            messages.append({"role": "assistant", "content": assistant_msg})
+    for item in history:
+        if isinstance(item, dict):
+            role = item.get("role")
+            content = item.get("content")
+            if role in {"user", "assistant"} and content:
+                messages.append({"role": role, "content": content})
 
-    messages.append({"role": "user", "content": message})
+    if isinstance(message, dict):
+        user_content = message.get("content", "")
+    else:
+        user_content = message
+
+    messages.append({"role": "user", "content": user_content})
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -66,13 +73,19 @@ def chat(message, history):
     )
     return response.choices[0].message.content
 
+    
 
 demo = gr.ChatInterface(
     fn=chat,
+    type="messages",
     title="Nader Chatbot",
     description="Ask questions about Nader's background, career, skills, and experience."
 )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
-    demo.launch(server_name="0.0.0.0", server_port=port)
+    demo.queue()
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=port
+    )
